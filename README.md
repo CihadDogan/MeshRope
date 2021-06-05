@@ -1,6 +1,6 @@
 # MeshRope
 
-Unity meshed rope implementation. Its physics based on project below:
+Unity meshed rope/cable implementation. Its physics based on project below:
 
 https://github.com/NoxWings/Cable-Component
 
