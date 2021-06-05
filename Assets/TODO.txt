@@ -1,0 +1,4 @@
+
+- Farkli segment lengltlerine uygun hale getir
+- Collisionlar
+- Uclardaki spereleri procedural olarak olustur
