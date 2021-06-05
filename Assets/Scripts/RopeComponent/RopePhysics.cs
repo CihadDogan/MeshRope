@@ -2,215 +2,199 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MeshRope
+[System.Serializable]
+public class CableParticle
 {
-    [System.Serializable]
-    public class CableParticle
+    // Components
+    public Transform _BoundTo = null;
+    public Rigidbody _BoundRigid = null;
+
+    // Variables
+    public Vector3 _Position, _OldPosition;
+
+    public Vector3 Position
     {
-        // Components
-        public Transform _BoundTo = null;
-        public Rigidbody _BoundRigid = null;
+        get { return _Position; }
+        set { _Position = value; }
+    }
 
-        // Variables
-        public Vector3 _Position, _OldPosition;
+    public Vector3 Velocity
+    {
+        get { return (_Position - _OldPosition); }
+    }
 
-        public Vector3 Position
+    public CableParticle(Vector3 newPosition)
+    {
+        _OldPosition = _Position = newPosition;
+    }
+
+    public void UpdateVerlet(Vector3 gravityDisplacement)
+    {
+        if (!IsFree())
         {
-            get { return _Position; }
-            set { _Position = value; }
-        }
-
-        public Vector3 Velocity
-        {
-            get { return (_Position - _OldPosition); }
-        }
-
-        public CableParticle(Vector3 newPosition)
-        {
-            _OldPosition = _Position = newPosition;
-        }
-
-        public void UpdateVerlet(Vector3 gravityDisplacement)
-        {
-            if (!IsFree())
+            if (_BoundRigid == null)
             {
-                if (_BoundRigid == null)
-                {
-                    this.UpdatePosition(_BoundTo.position);
-                }
-                else
-                {
-                    switch (_BoundRigid.interpolation)
-                    {
-                        case RigidbodyInterpolation.Interpolate:
-                            this.UpdatePosition(_BoundRigid.position + (_BoundRigid.velocity * Time.fixedDeltaTime) / 2);
-                            break;
-                        case RigidbodyInterpolation.None:
-                        default:
-                            this.UpdatePosition(_BoundRigid.position + _BoundRigid.velocity * Time.fixedDeltaTime);
-                            break;
-                    }
-                }
+                this.UpdatePosition(_BoundTo.position);
             }
             else
             {
-                Vector3 newPosition = this.Position + this.Velocity + gravityDisplacement;
-                this.UpdatePosition(newPosition);
+                switch (_BoundRigid.interpolation)
+                {
+                    case RigidbodyInterpolation.Interpolate:
+                        this.UpdatePosition(_BoundRigid.position + (_BoundRigid.velocity * Time.fixedDeltaTime) / 2);
+                        break;
+                    case RigidbodyInterpolation.None:
+                    default:
+                        this.UpdatePosition(_BoundRigid.position + _BoundRigid.velocity * Time.fixedDeltaTime);
+                        break;
+                }
             }
         }
-
-        public void UpdatePosition(Vector3 newPos)
+        else
         {
-            _OldPosition = _Position;
-            _Position = newPos;
-        }
-
-        public void Bind(Transform to)
-        {
-            _BoundTo = to;
-            _BoundRigid = to.GetComponent<Rigidbody>();
-            _OldPosition = _Position = _BoundTo.position;
-        }
-
-        public bool IsFree()
-        {
-            return (_BoundTo == null);
+            Vector3 newPosition = this.Position + this.Velocity + gravityDisplacement;
+            this.UpdatePosition(newPosition);
         }
     }
 
-    public class RopePhysics : MonoBehaviour
+    public void UpdatePosition(Vector3 newPos)
     {
-        // Components
-        [SerializeField] private Transform _StartPoint;
-        [SerializeField] private Transform _EndPoint;
-        [SerializeField] private CableParticle[] _Points;
-        public RopeRenderer MRopeRenderer;
+        _OldPosition = _Position;
+        _Position = newPos;
+    }
 
-        // Variables
-        [SerializeField] private float _CableLength = 0.5f;
-        [SerializeField] private int _TotalSegments = 5;
-        private int _Segments = 0;
-        [SerializeField] private int _VerletIterations = 1;
-        [SerializeField] private int _SolverIterations = 1;
+    public void Bind(Transform to)
+    {
+        _BoundTo = to;
+        _BoundRigid = to.GetComponent<Rigidbody>();
+        _OldPosition = _Position = _BoundTo.position;
+    }
 
-        void Start()
+    public bool IsFree()
+    {
+        return (_BoundTo == null);
+    }
+}
+
+public class RopePhysics : MonoBehaviour
+{
+    // Components
+    [SerializeField] private Transform _StartPoint;
+    [SerializeField] private Transform _EndPoint;
+    [SerializeField] private CableParticle[] _Points;
+    public RopeRenderer MRopeRenderer;
+
+    // Variables
+    [SerializeField] private float _CableLength = 0.5f;
+    [SerializeField] private int _TotalSegments = 5;
+    private int _Segments = 0;
+    [SerializeField] private int _VerletIterations = 1;
+    [SerializeField] private int _SolverIterations = 1;
+
+    void Start()
+    {
+        InitializeCablePhsyic();
+    }
+
+    void InitializeCablePhsyic()
+    {
+        // Calculate segments to use
+        _Segments = _TotalSegments;
+
+        Vector3 cableDirection = (_EndPoint.position - transform.position).normalized;
+        float initialSegmentLength = _CableLength / _Segments;
+        _Points = new CableParticle[_Segments + 1];
+
+        // Foreach point
+        for (int pointIdx = 0; pointIdx <= _Segments; pointIdx++)
         {
-            InitCablePhsyic();
-            InitCollision();
+            // Initial position
+            Vector3 initialPosition = transform.position + (cableDirection * (initialSegmentLength * pointIdx));
+            _Points[pointIdx] = new CableParticle(initialPosition);
         }
 
-        /**
-         * Init cable particles
-         * 
-         * Creates the cable particles along the cable length
-         * and binds the start and end tips to their respective game objects.
-         */
-        void InitCablePhsyic()
+        // Bind start and end particles with their respective gameobjects
+        CableParticle start = _Points[0];
+        CableParticle end = _Points[_Segments];
+        start.Bind(_StartPoint.transform);
+        end.Bind(_EndPoint.transform);
+    }
+
+    void Update()
+    {
+        RenderCable();
+    }
+
+    void FixedUpdate()
+    {
+        for (int verletIdx = 0; verletIdx < _VerletIterations; verletIdx++)
         {
-            // Calculate segments to use
-            _Segments = _TotalSegments;
-
-            Vector3 cableDirection = (_EndPoint.position - transform.position).normalized;
-            float initialSegmentLength = _CableLength / _Segments;
-            _Points = new CableParticle[_Segments + 1];
-
-            // Foreach point
-            for (int pointIdx = 0; pointIdx <= _Segments; pointIdx++)
-            {
-                // Initial position
-                Vector3 initialPosition = transform.position + (cableDirection * (initialSegmentLength * pointIdx));
-                _Points[pointIdx] = new CableParticle(initialPosition);
-            }
-
-            // Bind start and end particles with their respective gameobjects
-            CableParticle start = _Points[0];
-            CableParticle end = _Points[_Segments];
-            start.Bind(_StartPoint.transform);
-            end.Bind(_EndPoint.transform);
+            VerletIntegrate();
+            SolveConstraints();
         }
+    }
 
-        void InitCollision()
+    void RenderCable()
+    {
+        Vector3[] positions = new Vector3[_Segments + 1];
+
+        for (int pointIdx = 0; pointIdx < _Segments + 1; pointIdx++)
+            positions[pointIdx] = _Points[pointIdx].Position;
+
+        MRopeRenderer.SetPositions(positions);
+    }
+
+    void VerletIntegrate()
+    {
+        Vector3 gravityDisplacement = Time.fixedDeltaTime * Time.fixedDeltaTime * Physics.gravity;
+        foreach (CableParticle particle in _Points)
         {
-            GameObject go1 = new GameObject("Colliders");
-            go1.transform.SetParent(gameObject.transform);
+            particle.UpdateVerlet(gravityDisplacement);
         }
+    }
 
-        void Update()
+    void SolveConstraints()
+    {
+        for (int iterationIdx = 0; iterationIdx < _SolverIterations; iterationIdx++)
         {
-            RenderCable();
+            SolveDistanceConstraint();
         }
+    }
 
-        void FixedUpdate()
+    void SolveDistanceConstraint()
+    {
+        float segmentLength = _CableLength / _Segments;
+        for (int SegIdx = 0; SegIdx < _Segments; SegIdx++)
         {
-            for (int verletIdx = 0; verletIdx < _VerletIterations; verletIdx++)
-            {
-                VerletIntegrate();
-                SolveConstraints();
-            }
+            CableParticle particleA = _Points[SegIdx];
+            CableParticle particleB = _Points[SegIdx + 1];
+
+            // Solve for this pair of particles
+            SolveDistanceConstraint(particleA, particleB, segmentLength);
         }
+    }
 
-        void RenderCable()
+    void SolveDistanceConstraint(CableParticle particleA, CableParticle particleB, float segmentLength)
+    {
+        // Find current vector between particles
+        Vector3 delta = particleB.Position - particleA.Position;
+        // 
+        float currentDistance = delta.magnitude;
+        float errorFactor = (currentDistance - segmentLength) / currentDistance;
+
+        // Only move free particles to satisfy constraints
+        if (particleA.IsFree() && particleB.IsFree())
         {
-            Vector3[] positions = new Vector3[_Segments + 1];
-
-            for (int pointIdx = 0; pointIdx < _Segments + 1; pointIdx++)
-                positions[pointIdx] = _Points[pointIdx].Position;
-
-            MRopeRenderer.SetPositions(positions);
+            particleA.Position += errorFactor * 0.5f * delta;
+            particleB.Position -= errorFactor * 0.5f * delta;
         }
-
-        void VerletIntegrate()
+        else if (particleA.IsFree())
         {
-            Vector3 gravityDisplacement = Time.fixedDeltaTime * Time.fixedDeltaTime * Physics.gravity;
-            foreach (CableParticle particle in _Points)
-            {
-                particle.UpdateVerlet(gravityDisplacement);
-            }
+            particleA.Position += errorFactor * delta;
         }
-
-        void SolveConstraints()
+        else if (particleB.IsFree())
         {
-            for (int iterationIdx = 0; iterationIdx < _SolverIterations; iterationIdx++)
-            {
-                SolveDistanceConstraint();
-            }
-        }
-
-        void SolveDistanceConstraint()
-        {
-            float segmentLength = _CableLength / _Segments;
-            for (int SegIdx = 0; SegIdx < _Segments; SegIdx++)
-            {
-                CableParticle particleA = _Points[SegIdx];
-                CableParticle particleB = _Points[SegIdx + 1];
-
-                // Solve for this pair of particles
-                SolveDistanceConstraint(particleA, particleB, segmentLength);
-            }
-        }
-
-        void SolveDistanceConstraint(CableParticle particleA, CableParticle particleB, float segmentLength)
-        {
-            // Find current vector between particles
-            Vector3 delta = particleB.Position - particleA.Position;
-            // 
-            float currentDistance = delta.magnitude;
-            float errorFactor = (currentDistance - segmentLength) / currentDistance;
-
-            // Only move free particles to satisfy constraints
-            if (particleA.IsFree() && particleB.IsFree())
-            {
-                particleA.Position += errorFactor * 0.5f * delta;
-                particleB.Position -= errorFactor * 0.5f * delta;
-            }
-            else if (particleA.IsFree())
-            {
-                particleA.Position += errorFactor * delta;
-            }
-            else if (particleB.IsFree())
-            {
-                particleB.Position -= errorFactor * delta;
-            }
+            particleB.Position -= errorFactor * delta;
         }
     }
 }
