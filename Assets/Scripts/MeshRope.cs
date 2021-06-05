@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(MeshRenderer))]
+[RequireComponent(typeof(MeshFilter))]
 public class MeshRope : MonoBehaviour
 {
     [Header("Phsyics")]
     [SerializeField] private Transform _StartPoint;
     [SerializeField] private Transform _EndPoint;
-    [SerializeField] private float _CableLength = 1f;
+    [SerializeField] private float _CableLength = 2f;
     [SerializeField] private int _TotalSegments = 16;
     [SerializeField] private int _VerletIterations = 1;
     [SerializeField] private int _SolverIterations = 1;
@@ -17,7 +19,7 @@ public class MeshRope : MonoBehaviour
 
     [Header("Renderer")]
     [SerializeField] int _Sides = 6;
-    [SerializeField] float _Radius = 0.2f;
+    [SerializeField] float _Radius = 0.1f;
     private Vector3[] _Vertices;
     private Mesh _Mesh;
     private MeshFilter _MeshFilter;
@@ -171,13 +173,13 @@ public class MeshRope : MonoBehaviour
 
         // Start
         _SphereStart.transform.SetParent(transform);
-        _SphereStart.transform.localScale = Vector3.one * _Radius * 1.85f;
+        _SphereStart.transform.localScale = Vector3.one * _Radius * 1.75f;
         _SphereStart.transform.position = _Positions[0];
         _SphereStart.GetComponent<MeshRenderer>().material = _MeshRenderer.material;
 
         // End
         _SphereEnd.transform.SetParent(transform);
-        _SphereEnd.transform.localScale = Vector3.one * _Radius * 1.85f;
+        _SphereEnd.transform.localScale = Vector3.one * _Radius * 1.75f;
         _SphereEnd.transform.position = _Positions[_Positions.Length - 1];
         _SphereEnd.GetComponent<MeshRenderer>().material = _MeshRenderer.material;
 

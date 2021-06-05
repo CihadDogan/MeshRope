@@ -30,7 +30,12 @@ public class CableParticle
 
     public void UpdateVerlet(Vector3 gravityDisplacement)
     {
-        if (!IsFree())
+        if (IsFree())
+        {
+            Vector3 newPosition = this.Position + this.Velocity + gravityDisplacement;
+            this.UpdatePosition(newPosition);
+        }
+        else
         {
             if (_BoundRigid == null)
             {
@@ -49,11 +54,6 @@ public class CableParticle
                         break;
                 }
             }
-        }
-        else
-        {
-            Vector3 newPosition = this.Position + this.Velocity + gravityDisplacement;
-            this.UpdatePosition(newPosition);
         }
     }
 

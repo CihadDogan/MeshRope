@@ -605,9 +605,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1541699236}
-  - component: {fileID: 1541699235}
   - component: {fileID: 1541699238}
   - component: {fileID: 1541699237}
+  - component: {fileID: 1541699235}
   m_Layer: 0
   m_Name: MeshRope
   m_TagString: Untagged
@@ -629,7 +629,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _StartPoint: {fileID: 1659324638}
   _EndPoint: {fileID: 1296855504}
-  _Points: []
   _CableLength: 4
   _TotalSegments: 36
   _VerletIterations: 1
