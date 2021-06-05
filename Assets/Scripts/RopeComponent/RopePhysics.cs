@@ -170,31 +170,26 @@ public class RopePhysics : MonoBehaviour
             CableParticle particleB = _Points[SegIdx + 1];
 
             // Solve for this pair of particles
-            SolveDistanceConstraint(particleA, particleB, segmentLength);
-        }
-    }
+            // Find current vector between particles
+            Vector3 delta = particleB.Position - particleA.Position;
+            // 
+            float currentDistance = delta.magnitude;
+            float errorFactor = (currentDistance - segmentLength) / currentDistance;
 
-    void SolveDistanceConstraint(CableParticle particleA, CableParticle particleB, float segmentLength)
-    {
-        // Find current vector between particles
-        Vector3 delta = particleB.Position - particleA.Position;
-        // 
-        float currentDistance = delta.magnitude;
-        float errorFactor = (currentDistance - segmentLength) / currentDistance;
-
-        // Only move free particles to satisfy constraints
-        if (particleA.IsFree() && particleB.IsFree())
-        {
-            particleA.Position += errorFactor * 0.5f * delta;
-            particleB.Position -= errorFactor * 0.5f * delta;
-        }
-        else if (particleA.IsFree())
-        {
-            particleA.Position += errorFactor * delta;
-        }
-        else if (particleB.IsFree())
-        {
-            particleB.Position -= errorFactor * delta;
+            // Only move free particles to satisfy constraints
+            if (particleA.IsFree() && particleB.IsFree())
+            {
+                particleA.Position += errorFactor * 0.5f * delta;
+                particleB.Position -= errorFactor * 0.5f * delta;
+            }
+            else if (particleA.IsFree())
+            {
+                particleA.Position += errorFactor * delta;
+            }
+            else if (particleB.IsFree())
+            {
+                particleB.Position -= errorFactor * delta;
+            }
         }
     }
 }
