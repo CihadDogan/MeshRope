@@ -4,7 +4,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(MeshRenderer))]
 [RequireComponent(typeof(MeshFilter))]
-public class MeshRope : MonoBehaviour
+public class CableComponent : MonoBehaviour
 {
     [Header("Phsyics")]
     [SerializeField] private Transform _StartPoint;
