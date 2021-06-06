@@ -21,8 +21,8 @@ public class MeshRope : MonoBehaviour
 
 
     [Header("Renderer")]
-    [SerializeField] int _Sides = 6;
-    [SerializeField] float _Radius = 0.1f;
+    [SerializeField] private int _Sides = 6;
+    [SerializeField] private float _Radius = 0.1f;
     private Vector3[] _Vertices;
     private Mesh _Mesh;
     private MeshFilter _MeshFilter;
