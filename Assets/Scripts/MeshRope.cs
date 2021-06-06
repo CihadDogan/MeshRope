@@ -13,9 +13,12 @@ public class MeshRope : MonoBehaviour
     [SerializeField] private int _TotalSegments = 16;
     [SerializeField] private int _VerletIterations = 1;
     [SerializeField] private int _SolverIterations = 1;
+    [Range(0.1f, 1f)]
+    [SerializeField] private float _Flexiblity = 1f;
     private CableParticle[] _Points;
     private int _Segments = 0;
     private Vector3[] _Positions;
+
 
     [Header("Renderer")]
     [SerializeField] int _Sides = 6;
@@ -106,7 +109,7 @@ public class MeshRope : MonoBehaviour
             // Find current vector between particles
             Vector3 delta = particleB.Position - particleA.Position;
             // 
-            float currentDistance = delta.magnitude;
+            float currentDistance = delta.magnitude * (1 / Mathf.Clamp(_Flexiblity, 0.1f, 1f));
             float errorFactor = (currentDistance - segmentLength) / currentDistance;
 
             // Only move free particles to satisfy constraints
