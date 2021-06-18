@@ -19,7 +19,6 @@ public class CableComponent : MonoBehaviour
     private int _Segments = 0;
     private Vector3[] _Positions;
 
-
     [Header("Renderer")]
     [SerializeField] private int _Sides = 6;
     [SerializeField] private float _Radius = 0.1f;
